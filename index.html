@@ -692,14 +692,12 @@
       const map = makeMap(canvas.width, canvas.height, xmin, xmax, ymin, ymax, margins);
       drawAxes(ctx, canvas, map, xmin, xmax, ymin, ymax, "Normal traction, σₙ", "Shear traction, τ");
 
-      drawDashedLine(ctx, map.x(q.center), map.y(ymin), map.x(q.center), map.y(ymax), "#b8bec8", 1.5);
-
       // Label the center of the total-stress Mohr circle.
       drawText(
         ctx,
         "center: ((σ₁ + σ₃)/2, 0)",
         map.x(q.center),
-        map.y(0) + 20,
+        map.y(0) + 30,
         { color: "#555", font: "14px Arial" }
       );
 
