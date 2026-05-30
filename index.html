@@ -699,7 +699,7 @@
         ctx,
         "center: ((σ₁ + σ₃)/2, 0)",
         map.x(q.center),
-        map.y(0) - 50,
+        map.y(0) + 20,
         { color: "#555", font: "14px Arial" }
       );
 
@@ -814,11 +814,10 @@
         ctx,
         "center: ((σ₁ + σ₃)/2 − p, 0)",
         map.x(centerEff),
-        map.y(0) - 50,
+        map.y(0) + 20,
         { color: "#1f5fbf", font: "14px Arial" }
       );
 
-      drawDashedLine(ctx, map.x(0), map.y(ymin), map.x(0), map.y(ymax), "#222", 2);
       drawCurve(ctx, [[map.x(xmin), map.y(mu * xmin + c)], [map.x(xmax), map.y(mu * xmax + c)]], "#c43b3b", 2.8, false);
 
       const pathPts = [];
