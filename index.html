@@ -525,11 +525,17 @@
       ctx.arc(X(0), Y(0), 13, 0, 2 * Math.PI);
       ctx.fill();
 
-      drawArrow(ctx, X(0.55 * n.x), Y(0.55 * n.y), X(0), Y(0), "#1f7a45", 3, 12);
+      // Move the normal-traction arrow farther from the fracture center
+      drawArrow(ctx, X(0.75 * n.x), Y(0.75 * n.y), X(0.15 * n.x), Y(0.15 * n.y), "#1f7a45", 3, 12);
+      
+      // Shear-traction arrow
       drawArrow(ctx, X(0), Y(0), X(-0.55 * d.x), Y(-0.55 * d.y), "#1f7a45", 3, 12);
-
-      drawText(ctx, "σₙ", X(0.67 * n.x), Y(0.67 * n.y), { color: "#1f7a45", font: "22px Arial" });
-      drawText(ctx, "τ", X(-0.68 * d.x), Y(-0.68 * d.y), { color: "#1f7a45", font: "22px Arial" });
+      
+      // Move σₙ label farther outward
+      drawText(ctx, "σₙ", X(0.88 * n.x), Y(0.88 * n.y), { color: "#1f7a45", font: "22px Arial" });
+      
+      // Move τ label upward slightly
+      drawText(ctx, "τ", X(-0.68 * d.x), Y(-0.68 * d.y) - 22, { color: "#1f7a45", font: "22px Arial" });
 
       const arcR = 0.45;
       ctx.strokeStyle = "#111";
@@ -713,7 +719,6 @@
         const th = q.theta * i / 160;
         pathPts.push([map.x(q.center + q.radius * Math.cos(2 * th)), map.y(q.radius * Math.sin(2 * th))]);
       }
-      drawCurve(ctx, pathPts, "#1f7a45", 4);
 
       const px = map.x(q.sigmaN);
       const py = map.y(q.tau);
@@ -721,6 +726,17 @@
       drawDashedLine(ctx, px, map.y(0), px, py, "#1f7a45", 1.8);
       drawDashedLine(ctx, map.x(0), py, px, py, "#1f7a45", 1.8);
       drawDashedLine(ctx, map.x(q.center), map.y(0), px, py, "#555", 1.5);
+
+      const angleLabelX = map.x(q.center + 0.55 * q.radius * Math.cos(q.theta));
+      const angleLabelY = map.y(0.55 * q.radius * Math.sin(q.theta));
+      
+      drawText(
+        ctx,
+        "2θ",
+        angleLabelX,
+        angleLabelY,
+        { color: "#555", font: "18px Arial" }
+      );
 
       drawText(ctx, "σ₁", map.x(sigma1), map.y(0) + 18, { font: "18px Arial" });
       drawText(ctx, "σ₃", map.x(sigma3), map.y(0) + 18, { font: "18px Arial" });
