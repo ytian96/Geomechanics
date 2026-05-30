@@ -726,15 +726,30 @@
       drawDashedLine(ctx, px, map.y(0), px, py, "#1f7a45", 1.8);
       drawDashedLine(ctx, map.x(0), py, px, py, "#1f7a45", 1.8);
       drawDashedLine(ctx, map.x(q.center), map.y(0), px, py, "#555", 1.5);
-
-      const angleLabelX = map.x(q.center + 0.55 * q.radius * Math.cos(q.theta));
-      const angleLabelY = map.y(0.55 * q.radius * Math.sin(q.theta));
+      
+      // Draw arc for 2θ on the Mohr circle
+      const arcRadius = 0.35 * q.radius;
+      const arcPts = [];
+      
+      for (let i = 0; i <= 80; i++) {
+        const a = (2 * q.theta) * i / 80;
+        const x = q.center + arcRadius * Math.cos(a);
+        const y = arcRadius * Math.sin(a);
+        arcPts.push([map.x(x), map.y(y)]);
+      }
+      
+      drawCurve(ctx, arcPts, "#555", 2, false);
+      
+      // Label 2θ near the arc
+      const angleLabelA = q.theta;
+      const angleLabelX = q.center + 0.48 * q.radius * Math.cos(angleLabelA);
+      const angleLabelY = 0.48 * q.radius * Math.sin(angleLabelA);
       
       drawText(
         ctx,
         "2θ",
-        angleLabelX,
-        angleLabelY,
+        map.x(angleLabelX),
+        map.y(angleLabelY),
         { color: "#555", font: "18px Arial" }
       );
 
