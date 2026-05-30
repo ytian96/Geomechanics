@@ -279,7 +279,7 @@
         <div id="summaryTop1" class="summary"></div>
       </div>
       <div class="card">
-        <div class="figure-title">Figure 2. Total-stress Mohr circle</div>
+        <div class="figure-title">Figure 2. Traction of the fracture on the Mohr circle</div>
         <canvas id="canvasMohr" width="640" height="520"></canvas>
         <div id="summaryTop2" class="summary"></div>
       </div>
@@ -352,7 +352,7 @@
     </section>
 
     <section class="hero">
-      <h2>Suggested student exercises</h2>
+      <h2>Suggested exercises</h2>
       <div class="exercise">
         <strong>Exercise 1: Effect of fracture orientation.</strong>
         Keep $\sigma_1$ and $\sigma_3$ fixed. Move $\theta$ from $0^\circ$ to $90^\circ$.
@@ -557,6 +557,31 @@
       };
     }
 
+    function equalAspectLimits(xmin, xmax, ymin, ymax, canvas, margins) {
+      // Expand either x-range or y-range so that one data unit has
+      // the same pixel length in both directions. This keeps Mohr circles round.
+      const m = margins || { left: 70, right: 30, top: 40, bottom: 70 };
+      const plotW = canvas.width - m.left - m.right;
+      const plotH = canvas.height - m.top - m.bottom;
+
+      let xRange = xmax - xmin;
+      let yRange = ymax - ymin;
+      const targetYRange = xRange * plotH / plotW;
+      const targetXRange = yRange * plotW / plotH;
+
+      if (targetYRange > yRange) {
+        const yMid = 0.5 * (ymin + ymax);
+        ymin = yMid - 0.5 * targetYRange;
+        ymax = yMid + 0.5 * targetYRange;
+      } else {
+        const xMid = 0.5 * (xmin + xmax);
+        xmin = xMid - 0.5 * targetXRange;
+        xmax = xMid + 0.5 * targetXRange;
+      }
+
+      return { xmin, xmax, ymin, ymax };
+    }
+
     function drawAxes(ctx, canvas, map, xmin, xmax, ymin, ymax, xlabel, ylabel) {
       ctx.save();
 
@@ -646,15 +671,37 @@
 
       const q = mohrQuantities(sigma1, sigma3, thetaDeg);
       const pad = 0.25 * q.radius;
-      const xmin = sigma3 - pad;
-      const xmax = sigma1 + pad;
-      const ymin = -0.15 * q.radius;
-      const ymax = 1.25 * q.radius;
 
-      const map = makeMap(canvas.width, canvas.height, xmin, xmax, ymin, ymax);
+      // Figure 2 axis limits:
+      // Start the normal-traction x-axis from 0, and let the shear-traction
+      // y-axis cross the x-axis at x = 0. The y-range is chosen so that
+      // one data unit has the same pixel length in both x and y directions,
+      // so the Mohr circle appears as a true half circle.
+      let xmin = 0;
+      let xmax = sigma1 + pad;
+      let ymin = 0;
+
+      const margins = { left: 70, right: 30, top: 40, bottom: 70 };
+      const plotW = canvas.width - margins.left - margins.right;
+      const plotH = canvas.height - margins.top - margins.bottom;
+      let ymax = (xmax - xmin) * plotH / plotW;
+
+      // Make sure the top of the Mohr circle and the labels have enough space.
+      ymax = Math.max(ymax, 1.25 * q.radius);
+
+      const map = makeMap(canvas.width, canvas.height, xmin, xmax, ymin, ymax, margins);
       drawAxes(ctx, canvas, map, xmin, xmax, ymin, ymax, "Normal traction, σₙ", "Shear traction, τ");
 
       drawDashedLine(ctx, map.x(q.center), map.y(ymin), map.x(q.center), map.y(ymax), "#b8bec8", 1.5);
+
+      // Label the center of the total-stress Mohr circle.
+      drawText(
+        ctx,
+        "center: ((σ₁ + σ₃)/2, 0)",
+        map.x(q.center),
+        map.y(0) - 20,
+        { color: "#555", font: "14px Arial" }
+      );
 
       const circlePts = [];
       for (let i = 0; i <= 240; i++) {
@@ -684,6 +731,35 @@
       drawText(ctx, "σ₁", map.x(sigma1), map.y(0) + 18, { font: "18px Arial" });
       drawText(ctx, "σ₃", map.x(sigma3), map.y(0) + 18, { font: "18px Arial" });
       drawText(ctx, "(σₙ, τ)", px + 44, py - 14, { color: "#1f7a45", font: "16px Arial" });
+
+      // Legend for the green point in Figure 2
+      const lgx = canvas.width - 255;
+      const lgy = 56;
+      ctx.save();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.90)";
+      ctx.strokeStyle = "#d9dee7";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(lgx - 14, lgy - 22, 235, 46, 10);
+      } else {
+        ctx.rect(lgx - 14, lgy - 22, 235, 46);
+      }
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = "#1f7a45";
+      ctx.beginPath();
+      ctx.arc(lgx + 8, lgy, 7, 0, 2 * Math.PI);
+      ctx.fill();
+      drawText(
+        ctx,
+        "traction on the preexisting fracture",
+        lgx + 124,
+        lgy,
+        { align: "center", color: "#1f7a45", font: "13px Arial" }
+      );
     }
 
     function drawFluid(state) {
@@ -705,15 +781,22 @@
       const mu = Math.tan(phiDeg * Math.PI / 180);
 
       const pad = 0.25 * q.radius;
-      const xmin = Math.min(sigma3 - pad, sigma3Eff - pad, -pad);
-      const xmax = Math.max(sigma1 + pad, sigma1Eff + pad);
+      let xmin = Math.min(sigma3 - pad, sigma3Eff - pad, -pad);
+      let xmax = Math.max(sigma1 + pad, sigma1Eff + pad);
 
       const yC1 = mu * xmin + c;
       const yC2 = mu * xmax + c;
-      const ymax = Math.max(1.25 * q.radius, yC1, yC2) * 1.08;
-      const ymin = -0.15 * q.radius;
+      let ymax = Math.max(1.25 * q.radius, yC1, yC2) * 1.08;
+      let ymin = -0.15 * q.radius;
 
-      const map = makeMap(canvas.width, canvas.height, xmin, xmax, ymin, ymax, { left: 84, right: 36, top: 38, bottom: 78 });
+      const margins = { left: 84, right: 36, top: 38, bottom: 78 };
+      const equalLimits = equalAspectLimits(xmin, xmax, ymin, ymax, canvas, margins);
+      xmin = equalLimits.xmin;
+      xmax = equalLimits.xmax;
+      ymin = equalLimits.ymin;
+      ymax = equalLimits.ymax;
+
+      const map = makeMap(canvas.width, canvas.height, xmin, xmax, ymin, ymax, margins);
       drawAxes(ctx, canvas, map, xmin, xmax, ymin, ymax, "Effective normal traction, σₙ' = σₙ − p", "Shear traction, τ");
 
       const totalPts = [];
@@ -725,8 +808,18 @@
       }
       drawCurve(ctx, totalPts, "#777", 2, true);
       drawCurve(ctx, effPts, "#1f5fbf", 3);
+
+      // Label the center of the effective-stress Mohr circle.
+      drawText(
+        ctx,
+        "center: ((σ₁ + σ₃)/2 − p, 0)",
+        map.x(centerEff),
+        map.y(0) - 20,
+        { color: "#1f5fbf", font: "14px Arial" }
+      );
+
       drawDashedLine(ctx, map.x(0), map.y(ymin), map.x(0), map.y(ymax), "#222", 2);
-      drawCurve(ctx, [[map.x(xmin), map.y(mu * xmin + c)], [map.x(xmax), map.y(mu * xmax + c)]], "#c43b3b", 2.6, true);
+      drawCurve(ctx, [[map.x(xmin), map.y(mu * xmin + c)], [map.x(xmax), map.y(mu * xmax + c)]], "#c43b3b", 2.8, false);
 
       const pathPts = [];
       for (let i = 0; i <= 160; i++) {
@@ -751,7 +844,43 @@
       drawText(ctx, "σ₁'", map.x(sigma1Eff), map.y(0) + 18, { font: "18px Arial" });
       drawText(ctx, "σ₃'", map.x(sigma3Eff), map.y(0) + 18, { font: "18px Arial" });
       drawText(ctx, "(σₙ', τ)", px + 50, py - 14, { color: "#1f7a45", font: "16px Arial" });
-      drawText(ctx, "Coulomb failure line", map.x(xmax) - 110, map.y(mu * xmax + c) - 18, { color: "#c43b3b", font: "15px Arial" });
+      // Legend for Figure 3
+      const lx = canvas.width - 315;
+      const ly = 48;
+      ctx.save();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.90)";
+      ctx.strokeStyle = "#d9dee7";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(lx - 14, ly - 20, 285, 124, 10);
+      } else {
+        ctx.rect(lx - 14, ly - 20, 285, 124);
+      }
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      drawCurve(ctx, [[lx, ly], [lx + 38, ly]], "#777", 2, true);
+      drawText(ctx, "Total stress circle", lx + 148, ly, { align: "center", font: "14px Arial" });
+
+      drawCurve(ctx, [[lx, ly + 28], [lx + 38, ly + 28]], "#1f5fbf", 3, false);
+      drawText(ctx, "Effective stress circle", lx + 155, ly + 28, { align: "center", font: "14px Arial" });
+
+      drawCurve(ctx, [[lx, ly + 56], [lx + 38, ly + 56]], "#c43b3b", 2.8, false);
+      drawText(ctx, "Coulomb failure line: τ = tan(φ)σₙ' + c", lx + 154, ly + 56, { align: "center", color: "#c43b3b", font: "14px Arial" });
+
+      ctx.fillStyle = "#1f7a45";
+      ctx.beginPath();
+      ctx.arc(lx + 19, ly + 84, 7, 0, 2 * Math.PI);
+      ctx.fill();
+      drawText(
+        ctx,
+        "traction on the preexisting fracture",
+        lx + 154,
+        ly + 84,
+        { align: "center", color: "#1f7a45", font: "13px Arial" }
+      );
     }
 
     function update() {
@@ -802,23 +931,25 @@
         status.innerHTML =
           `Opening and shear can both be activated: ` +
           `$p\\geq\\sigma_3$ and $\\tau\\geq\\tan(\\phi)\\sigma_n' + c$.`;
+
       } else if (opening) {
         status.className = "status opening";
         status.innerHTML =
-          `New opening can be activated and rock can be broken: ` +
-          `$p\\geq\\sigma_3$.`;
+          `New opening can be activated and shear cannot be activated: ` +
+          `$p\\geq\\sigma_3$ and $\\tau<\\tan(\\phi)\\sigma_n' + c$.`;
+
       } else if (shear) {
         status.className = "status shear";
         status.innerHTML =
-          `Shear activation on the preexisting fracture can be activated: ` +
-          `$\\tau\\geq\\tan(\\phi)\\sigma_n' + c$.`;
+          `Shear activation on the preexisting fracture can be activated and no opening can be created: ` +
+          `$p<\\sigma_3$ and $\\tau\\geq\\tan(\\phi)\\sigma_n' + c$.`;
+
       } else {
         status.className = "status none";
         status.innerHTML =
           `Neither opening nor shear can be activated: ` +
           `$p<\\sigma_3$ and $\\tau<\\tan(\\phi)\\sigma_n' + c$.`;
       }
-
       typeset();
     }
 
@@ -837,7 +968,6 @@
       update();
       setTimeout(update, 250);
     });
-    
   </script>
 </body>
 </html>
