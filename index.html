@@ -912,9 +912,10 @@
         `Fracture orientation: $\\theta=${state.thetaDeg.toFixed(1)}^\\circ$ from $\\sigma_3$.`;
 
       el("summaryTop2").innerHTML =
-        `$\\sigma_1=${state.sigma1.toFixed(2)}$ MPa, ` +
-        `$\\sigma_3=${state.sigma3.toFixed(2)}$ MPa, ` +
-        `$\\sigma_n=${q.sigmaN.toFixed(2)}$ MPa, ` +
+        `Given in-situ stress $\\sigma_1=${state.sigma1.toFixed(2)}$ MPa ` +
+        `and $\\sigma_3=${state.sigma3.toFixed(2)}$ MPa, ` +
+        `the traction on the fracture is ` +
+        `$\\sigma_n=${q.sigmaN.toFixed(2)}$ MPa and ` +
         `$\\tau=${q.tau.toFixed(2)}$ MPa.`;
 
       el("summaryFluid").innerHTML =
@@ -926,26 +927,27 @@
       if (opening && shear) {
         status.className = "status both";
         status.innerHTML =
-          `Opening and shear can both be activated: ` +
-          `$p\\geq\\sigma_3$ and $\\tau\\geq\\tan(\\phi)\\sigma_n' + c$.`;
-
+          `Opening ($p\\geq\\sigma_3$) can be created and shear can be activated ` +
+          `($\\tau\\geq\\tan(\\phi)\\sigma_n^{\\prime} + c$).`;
+      
       } else if (opening) {
         status.className = "status opening";
         status.innerHTML =
-          `New opening can be activated and shear cannot be activated: ` +
-          `$p\\geq\\sigma_3$ and $\\tau<\\tan(\\phi)\\sigma_n' + c$.`;
-
+          `New opening can be activated ($p\\geq\\sigma_3$) and shear cannot be activated ` +
+          `($\\tau<\\tan(\\phi)\\sigma_n^{\\prime} + c$).`;
+      
       } else if (shear) {
         status.className = "status shear";
         status.innerHTML =
-          `Shear activation on the preexisting fracture can be activated and no opening can be created: ` +
-          `$p<\\sigma_3$ and $\\tau\\geq\\tan(\\phi)\\sigma_n' + c$.`;
-
+          `Shear activation on the preexisting fracture can be activated ` +
+          `($\\tau\\geq\\tan(\\phi)\\sigma_n^{\\prime} + c$) and no opening can be created ` +
+          `($p<\\sigma_3$).`;
+      
       } else {
         status.className = "status none";
         status.innerHTML =
-          `Neither opening nor shear can be activated: ` +
-          `$p<\\sigma_3$ and $\\tau<\\tan(\\phi)\\sigma_n' + c$.`;
+          `Neither opening ($p<\\sigma_3$) nor shear can be activated ` +
+          `($\\tau<\\tan(\\phi)\\sigma_n^{\\prime} + c$).`;
       }
       typeset();
     }
