@@ -291,7 +291,7 @@
         <div class="control">
           <label for="pressure">Fluid pressure, $p$ (MPa)</label>
           <div class="range-row">
-            <input id="pressure" type="range" min="0" max="100" step="1" value="8" />
+            <input id="pressure" type="range" min="0" max="60" step="1" value="8" />
             <span id="pressureValue" class="value-pill">8 MPa</span>
           </div>
         </div>
@@ -717,10 +717,6 @@
 
       const px = map.x(q.sigmaN);
       const py = map.y(q.tau);
-      ctx.fillStyle = "#1f7a45";
-      ctx.beginPath();
-      ctx.arc(px, py, 9, 0, 2 * Math.PI);
-      ctx.fill();
 
       drawDashedLine(ctx, px, map.y(0), px, py, "#1f7a45", 1.8);
       drawDashedLine(ctx, map.x(0), py, px, py, "#1f7a45", 1.8);
@@ -859,7 +855,7 @@
       ctx.restore();
 
       drawCurve(ctx, [[lx, ly], [lx + 38, ly]], "#777", 2, true);
-      drawText(ctx, "Total stress circle", lx + 148, ly, { align: "center", font: "14px Arial" });
+      drawText(ctx, "In-situ stress circle", lx + 148, ly, { align: "center", font: "14px Arial" });
 
       drawCurve(ctx, [[lx, ly + 28], [lx + 38, ly + 28]], "#1f5fbf", 3, false);
       drawText(ctx, "Effective stress circle", lx + 155, ly + 28, { align: "center", font: "14px Arial" });
@@ -909,7 +905,7 @@
       const shear = q.tau >= tauFailure;
 
       el("summaryTop1").innerHTML =
-        `Fracture orientation: $\\theta=${state.thetaDeg.toFixed(1)}^\\circ$ from $\\sigma_3$.`;
+        `Fracture orientation: $\\theta=${state.thetaDeg.toFixed(1)}^\\circ$ counterclockwise from $\\sigma_3$.`;
 
       el("summaryTop2").innerHTML =
         `Given in-situ stress $\\sigma_1=${state.sigma1.toFixed(2)}$ MPa ` +
@@ -919,7 +915,7 @@
         `$\\tau=${q.tau.toFixed(2)}$ MPa.`;
 
       el("summaryFluid").innerHTML =
-        `Traction under fluid pressure $p=${state.p.toFixed(2)}$ MPa: ` +
+        `Traction on the fracture under fluid pressure $p=${state.p.toFixed(2)}$ MPa: ` +
         `$\\sigma_n'=${sigmaNEff.toFixed(2)}$ MPa, ` +
         `$\\tau=${q.tau.toFixed(2)}$ MPa.`;
 
