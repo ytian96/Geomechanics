@@ -865,6 +865,34 @@
       drawDashedLine(ctx, map.x(0), py, px, py, "#1f7a45", 1.8);
       drawDashedLine(ctx, map.x(centerEff), map.y(0), px, py, "#555", 1.5);
 
+      // Draw arc for 2θ on the effective-stress Mohr circle.
+      // The angle is measured from the positive effective-normal-stress axis
+      // to the radial line connecting the effective Mohr-circle center to the traction point.
+      const arcRadiusEff = 0.35 * q.radius;
+      const arcPtsEff = [];
+
+      for (let i = 0; i <= 80; i++) {
+        const a = (2 * q.theta) * i / 80;
+        const x = centerEff + arcRadiusEff * Math.cos(a);
+        const y = arcRadiusEff * Math.sin(a);
+        arcPtsEff.push([map.x(x), map.y(y)]);
+      }
+
+      drawCurve(ctx, arcPtsEff, "#555", 2, false);
+
+      // Label 2θ near the arc
+      const angleLabelAEff = q.theta;
+      const angleLabelXEff = centerEff + 0.48 * q.radius * Math.cos(angleLabelAEff);
+      const angleLabelYEff = 0.48 * q.radius * Math.sin(angleLabelAEff);
+
+      drawText(
+        ctx,
+        "2θ",
+        map.x(angleLabelXEff),
+        map.y(angleLabelYEff),
+        { color: "#555", font: "18px Arial" }
+      );
+
       drawText(ctx, "σ₁'", map.x(sigma1Eff), map.y(0) + 18, { font: "18px Arial" });
       drawText(ctx, "σ₃'", map.x(sigma3Eff), map.y(0) + 18, { font: "18px Arial" });
       drawText(ctx, "(σₙ', τ)", px + 50, py - 14, { color: "#1f7a45", font: "16px Arial" });
