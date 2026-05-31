@@ -224,7 +224,7 @@
         <li>Explain how fracture orientation controls the normal traction, $\sigma_n$, and shear traction, $\tau$.</li>
         <li>Use the Mohr circle to visualize the traction state, $(\sigma_n,\tau)$, on a preexisting fracture.</li>
         <li>Explain how fluid pressure, $p$, reduces effective normal traction, $\sigma_n'$, and shifts the Mohr circle left.</li>
-        <li>Use the Coulomb failure line, $\tau = \tan(\phi)(\sigma_n + T_0)' + c$, to evaluate shear activation.</li>
+        <li>Use the Coulomb failure line, $\tau = \tan(\phi)\sigma_n' + c$, to evaluate shear activation.</li>
         <li>Distinguish among no activation, opening activation, shear activation, and combined activation.</li>
       </ol>
 
@@ -248,6 +248,14 @@
         In a real 3D stress state, the full 3D Mohr-circle representation should be used,
         including the circles associated with $\sigma_1$, $\sigma_2$, and $\sigma_3$.
       </p>
+      <p>
+        The tension cut-off line used here is also a simplified assumption for opening-mode failure.
+        A more realistic brittle-rock failure model can use the Griffith-Coulomb criterion,
+        often called the Modified Griffith criterion; see, for example,
+        <a href="https://static.rocscience.cloud/assets/resources/learning/hoek/2019-The-Hoek-Brown-failure-criterion-and-GSI-2018-edition-1.pdf" target="_blank" rel="noopener noreferrer">
+          Hoek and Brown's discussion of Griffith-based brittle-rock failure
+        </a>.
+      </p>
 
       <table>
         <thead>
@@ -258,8 +266,8 @@
           <tr><td>$\sigma_3$</td><td>Minimum principal stress</td></tr>
           <tr><td>$\theta$</td><td>Preexisting fracture orientation measured counterclockwise from the $\sigma_3$ direction</td></tr>
           <tr><td>$p$</td><td>Fluid pressure</td></tr>
-          <tr><td>$\phi$</td><td>Rock friction angle</td></tr>
-          <tr><td>$c$</td><td>Rock cohesion</td></tr>
+          <tr><td>$\phi$</td><td>Friction angle</td></tr>
+          <tr><td>$c$</td><td>Cohesion</td></tr>
           <tr><td>$T_0$</td><td>Rock tensile strength</td></tr>
         </tbody>
       </table>
@@ -300,7 +308,7 @@
     </section>
 
     <section class="card control-card">
-      <h2>Fluid pressure and rock properties for Coulomb failure line</h2>
+      <h2>Fluid pressure and Coulomb failure line</h2>
       <div class="control-grid">
         <div class="control">
           <label for="pressure">Fluid pressure, $p$ (MPa)</label>
@@ -310,16 +318,16 @@
           </div>
         </div>
         <div class="control">
-          <label for="frictionAngle">Friction angle, $\phi$ (degrees)</label>
+          <label for="frictionAngle">Rock friction angle, $\phi$ (degrees)</label>
           <input id="frictionAngle" type="number" value="30" step="1" />
         </div>
         <div class="control">
-          <label for="cohesion">Cohesion, $c$ (MPa)</label>
-          <input id="cohesion" type="number" value="0" step="0.1" />
+          <label for="cohesion">Rock cohesion, $c$ (MPa)</label>
+          <input id="cohesion" type="number" value="4" step="0.1" />
         </div>
         <div class="control">
           <label for="tensileStrength">Rock tensile strength, $T_0$ (MPa)</label>
-          <input id="tensileStrength" type="number" value="0" step="0.1" />
+          <input id="tensileStrength" type="number" value="3" step="0.1" />
         </div>
       </div>
     </section>
@@ -365,7 +373,7 @@
       <p>
         Opening activation is identified when $p > \sigma_3 + T_0$.
         Shear activation on a preexisting fracture is identified when
-        $\tau \geq \tan(\phi)(\sigma_n' + T_0) + c$.
+        $\tau \geq \tan(\phi)\sigma_n' + c$.
       </p>
     </section>
 
@@ -386,12 +394,12 @@
         and one where both are activated.
       </div>
       <div class="exercise">
-        <strong>Exercise 4: Effect of friction angle.</strong>
+        <strong>Exercise 4: Effect of rock friction angle.</strong>
         Increase $\phi$. How does the Coulomb failure line change? Does shear activation become easier or harder?
       </div>
       <div class="exercise">
-        <strong>Exercise 5: Effect of cohesion.</strong>
-        Increase $c$ or $T_0$. How does the Coulomb failure line move, and how does the activation status change?
+        <strong>Exercise 5: Effect of rock cohesion and rock tensile strength.</strong>
+        Increase $c$ or $T_0$. How do the Coulomb failure line, tension cut-off line, and activation status change?
       </div>
     </section>
   </main>
@@ -846,11 +854,11 @@
       const mu = Math.tan(phiDeg * Math.PI / 180);
 
       const pad = 0.25 * q.radius;
-      let xmin = Math.min(sigma3 - pad, sigma3Eff - pad, -pad);
+      let xmin = Math.min(sigma3 - pad, sigma3Eff - pad, -T0 - pad, -pad);
       let xmax = Math.max(sigma1 + pad, sigma1Eff + pad);
 
-      const yC1 = mu * (xmin + T0) + c;
-      const yC2 = mu * (xmax + T0) + c;
+      const yC1 = mu * xmin + c;
+      const yC2 = mu * xmax + c;
       let ymax = Math.max(1.25 * q.radius, yC1, yC2) * 1.08;
       let ymin = -0.15 * q.radius;
 
@@ -883,17 +891,29 @@
         { color: "#1f5fbf", font: "14px Arial" }
       );
 
-      drawCurve(ctx, [[map.x(xmin), map.y(mu * (xmin + T0) + c)], [map.x(xmax), map.y(mu * (xmax + T0) + c)]], "#c43b3b", 2.8, false);
+      drawCurve(ctx, [[map.x(xmin), map.y(mu * xmin + c)], [map.x(xmax), map.y(mu * xmax + c)]], "#c43b3b", 2.8, false);
 
-      // Mark the x-intercept shift caused by tensile strength.
-      // The Coulomb line τ = tan(φ)(σₙ' + T₀) + c is shifted left by T₀.
-      // This label marks the point (-T₀, 0) on the effective-normal-stress axis.
-      // Always show the tensile-strength reference point.
-      // When T₀ = 0, this point is at the origin: (-T₀, 0) = (0, 0).
-      const t0x = map.x(-T0);
+      // Draw the tensile cut-off line at σₙ' = −T₀.
+      // It starts from (−T₀, 0) and stops at its intersection with
+      // the Coulomb failure line τ = tan(φ)σₙ' + c.
+      const t0XValue = -T0;
+      const tensionCutoffY = mu * t0XValue + c;
+      const tensionLineY0 = 0;
+      const tensionLineY1 = Math.max(tensionCutoffY, 0);
+
+      drawCurve(
+        ctx,
+        [[map.x(t0XValue), map.y(tensionLineY0)], [map.x(t0XValue), map.y(tensionLineY1)]],
+        "#8b5cf6",
+        2.8,
+        false
+      );
+
+      // Mark and label the tensile cut-off point on the effective-normal-stress axis.
+      const t0x = map.x(t0XValue);
       const t0y = map.y(0);
 
-      ctx.fillStyle = "#c43b3b";
+      ctx.fillStyle = "#8b5cf6";
       ctx.beginPath();
       ctx.arc(t0x, t0y, 5, 0, 2 * Math.PI);
       ctx.fill();
@@ -903,7 +923,7 @@
         "−T₀",
         t0x,
         t0y + 22,
-        { color: "#c43b3b", font: "16px Arial" }
+        { color: "#8b5cf6", font: "16px Arial" }
       );
 
       const pathPts = [];
@@ -958,7 +978,7 @@
       drawText(ctx, "σ₃'", map.x(sigma3Eff), map.y(0) + 18, { font: "18px Arial" });
       drawText(ctx, "(σₙ', τ)", px + 50, py - 14, { color: "#1f7a45", font: "16px Arial" });
       // Legend for Figure 3
-      const lx = canvas.width - 315;
+      const lx = canvas.width - 430;
       const ly = 48;
       ctx.save();
       ctx.fillStyle = "rgba(255, 255, 255, 0.90)";
@@ -966,32 +986,35 @@
       ctx.lineWidth = 1;
       ctx.beginPath();
       if (ctx.roundRect) {
-        ctx.roundRect(lx - 14, ly - 20, 285, 124, 10);
+        ctx.roundRect(lx - 14, ly - 20, 410, 152, 10);
       } else {
-        ctx.rect(lx - 14, ly - 20, 285, 124);
+        ctx.rect(lx - 14, ly - 20, 410, 152);
       }
       ctx.fill();
       ctx.stroke();
       ctx.restore();
 
       drawCurve(ctx, [[lx, ly], [lx + 38, ly]], "#777", 2, true);
-      drawText(ctx, "In-situ stress circle", lx + 148, ly, { align: "center", font: "14px Arial" });
+      drawText(ctx, "In-situ stress circle", lx + 215, ly, { align: "center", font: "14px Arial" });
 
       drawCurve(ctx, [[lx, ly + 28], [lx + 38, ly + 28]], "#1f5fbf", 3, false);
-      drawText(ctx, "Effective stress circle", lx + 155, ly + 28, { align: "center", font: "14px Arial" });
+      drawText(ctx, "Effective stress circle", lx + 215, ly + 28, { align: "center", font: "14px Arial" });
 
       drawCurve(ctx, [[lx, ly + 56], [lx + 38, ly + 56]], "#c43b3b", 2.8, false);
-      drawText(ctx, "Coulomb failure line: τ = tan(φ)(σₙ' + T₀) + c", lx + 154, ly + 56, { align: "center", color: "#c43b3b", font: "13px Arial" });
+      drawText(ctx, "Coulomb failure line (shear mode): τ = tan(φ)σₙ' + c", lx + 215, ly + 56, { align: "center", color: "#c43b3b", font: "14px Arial" });
+
+      drawCurve(ctx, [[lx, ly + 92], [lx + 38, ly + 92]], "#8b5cf6", 2.8, false);
+      drawText(ctx, "Tension cut-off (opening mode): σₙ' = −T₀", lx + 215, ly + 92, { align: "center", color: "#8b5cf6", font: "14px Arial" });
 
       ctx.fillStyle = "#1f7a45";
       ctx.beginPath();
-      ctx.arc(lx + 19, ly + 84, 7, 0, 2 * Math.PI);
+      ctx.arc(lx + 19, ly + 120, 7, 0, 2 * Math.PI);
       ctx.fill();
       drawText(
         ctx,
         "Traction on the fracture",
-        lx + 154,
-        ly + 84,
+        lx + 215,
+        ly + 120,
         { align: "center", color: "#1f7a45", font: "13px Arial" }
       );
     }
@@ -1019,7 +1042,7 @@
       const q = mohrQuantities(state.sigma1, state.sigma3, state.thetaDeg);
       const sigmaNEff = q.sigmaN - state.p;
       const mu = Math.tan(state.phiDeg * Math.PI / 180);
-      const tauFailure = mu * (sigmaNEff + state.T0) + state.c;
+      const tauFailure = mu * sigmaNEff + state.c;
 
       const opening = state.p > state.sigma3 + state.T0;
       const shear = q.tau >= tauFailure;
@@ -1039,33 +1062,33 @@
         `rock tensile strength $T_0=${state.T0.toFixed(2)}$ MPa: ` +
         `$\\sigma_n'=${sigmaNEff.toFixed(2)}$ MPa, ` +
         `$\\tau=${q.tau.toFixed(2)}$ MPa, and ` +
-        `$\\tau_f=\\tan(\\phi)(\\sigma_n^{\\prime}+T_0)+c=${tauFailure.toFixed(2)}$ MPa.`;
+        `$\\tau_f=\\tan(\\phi)\\sigma_n^{\\prime}+c=${tauFailure.toFixed(2)}$ MPa.`;
 
       const status = el("activationStatus");
       if (opening && shear) {
         status.className = "status both";
         status.innerHTML =
           `Opening ($p>\\sigma_3+T_0$) can be created and shear can be activated ` +
-          `($\\tau\\geq\\tan(\\phi)(\\sigma_n^{\\prime}+T_0) + c$).`;
+          `($\\tau\\geq\\tan(\\phi)\\sigma_n^{\\prime} + c$).`;
       
       } else if (opening) {
         status.className = "status opening";
         status.innerHTML =
           `New opening can be activated ($p>\\sigma_3+T_0$) and shear cannot be activated ` +
-          `($\\tau<\\tan(\\phi)(\\sigma_n^{\\prime}+T_0) + c$).`;
+          `($\\tau<\\tan(\\phi)\\sigma_n^{\\prime} + c$).`;
       
       } else if (shear) {
         status.className = "status shear";
         status.innerHTML =
           `Shear activation on the preexisting fracture can be activated ` +
-          `($\\tau\\geq\\tan(\\phi)(\\sigma_n^{\\prime}+T_0) + c$) and no opening can be created ` +
+          `($\\tau\\geq\\tan(\\phi)\\sigma_n^{\\prime} + c$) and no opening can be created ` +
           `($p\\leq\\sigma_3+T_0$).`;
       
       } else {
         status.className = "status none";
         status.innerHTML =
           `Neither opening ($p\\leq\\sigma_3+T_0$) nor shear can be activated ` +
-          `($\\tau<\\tan(\\phi)(\\sigma_n^{\\prime}+T_0) + c$).`;
+          `($\\tau<\\tan(\\phi)\\sigma_n^{\\prime} + c$).`;
       }
       typeset();
     }
